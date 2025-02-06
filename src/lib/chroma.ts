@@ -1,5 +1,10 @@
 import { ChromaClient, Collection } from "chromadb";
 
+type ResourceMetadata = {
+  sessionId: string;
+  [key: string]: string | number | boolean;
+};
+
 const chromaHost = process.env.CHROMA_HOST || "localhost";
 const chromaPort = process.env.CHROMA_PORT || "8000";
 
@@ -30,7 +35,7 @@ export async function addResourceEmbedding(
   resourceId: string,
   sessionId: string,
   content: string,
-  metadata: Record<string, any> = {}
+  metadata: Omit<ResourceMetadata, 'sessionId'> = {}
 ) {
   const collection = await getResourcesCollection();
   await collection.add({
@@ -66,7 +71,7 @@ export async function updateResourceEmbedding(
   resourceId: string,
   sessionId: string,
   content: string,
-  metadata: Record<string, any> = {}
+  metadata: Omit<ResourceMetadata, 'sessionId'> = {}
 ) {
   await deleteResourceEmbedding(resourceId);
   await addResourceEmbedding(resourceId, sessionId, content, metadata);
