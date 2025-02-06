@@ -1,36 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cortex - AI-Driven Research Assistant
 
-## Getting Started
+Cortex is an AI-driven note-taking and knowledge-base application designed for structured research. Users can initiate sessions on specific topics, upload or link relevant context (text, URLs, videos), set research goals, and have the AI agent summarize, reason, and produce final structured outputs.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Research Session Management**
+
+  - Create and manage research sessions with specific topics and goals
+  - Add context through text, URLs, PDFs, and videos
+  - Organize research materials in one centralized location
+
+- **AI-Powered Analysis**
+
+  - Automatic embedding and organization of context in vector store
+  - AI agent processes and summarizes information
+  - Structured knowledge piece generation
+
+- **Smart Knowledge Base**
+  - Easy retrieval of past research
+  - Updateable knowledge pieces
+  - Context-aware searching and linking
+
+## Tech Stack
+
+- **Frontend**: Next.js 13+ with TypeScript
+- **Backend**: Supabase (PostgreSQL + Auth)
+- **Vector Store**: ChromaDB
+- **AI Processing**: LangGraph (TypeScript)
+- **Styling**: Tailwind CSS
+
+## Prerequisites
+
+- Node.js 18+
+- Supabase CLI
+- ChromaDB
+- OpenAI API key (for LangGraph)
+
+## Local Development Setup
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/your-username/cortex.git
+   cd cortex
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Fill in the required environment variables:
+
+   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `CHROMA_HOST`: ChromaDB host (default: localhost)
+   - `CHROMA_PORT`: ChromaDB port (default: 8000)
+
+4. Initialize Supabase:
+
+   ```bash
+   supabase init
+   supabase link --project-ref your-project-ref
+   ```
+
+5. Run database migrations:
+
+   ```bash
+   supabase db push
+   ```
+
+6. Start ChromaDB:
+
+   ```bash
+   docker run -d -p 8000:8000 chromadb/chroma
+   ```
+
+7. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+8. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Project Structure
+
+```
+cortex/
+├── src/
+│   ├── app/                 # Next.js app router pages
+│   ├── components/         # Reusable UI components
+│   ├── contexts/          # React contexts (auth, etc.)
+│   ├── lib/               # Utility functions and API clients
+│   └── types/             # TypeScript type definitions
+├── public/               # Static assets
+└── supabase/            # Supabase configurations and migrations
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Database Schema
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **sessions**: Research session details and metadata
+- **resources**: Context materials (text, URLs, etc.)
+- **knowledge_pieces**: AI-generated summaries and insights
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Features in Development
 
-## Learn More
+- Integration with third-party platforms (Notion, Evernote, etc.)
+- Collaboration and sharing capabilities
+- Advanced AI agent features (automated web research, continuous updates)
+- Export functionality (PDF, CSV, Excel)
 
-To learn more about Next.js, take a look at the following resources:
+## Contributing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the MIT License - see the LICENSE file for details.
