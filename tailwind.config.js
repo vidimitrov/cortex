@@ -41,6 +41,9 @@ module.exports = {
       minHeight: {
         "screen-without-nav": "calc(100vh - 64px)",
       },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+      },
       animation: {
         "fade-in": "fade-in 0.5s ease-out",
         "slide-in": "slide-in 0.5s ease-out",
