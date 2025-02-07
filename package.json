@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@assistant-ui/react": "^0.7.69",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.2.0",
     "@langchain/langgraph": "^0.0.1",
