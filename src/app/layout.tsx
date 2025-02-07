@@ -5,6 +5,9 @@ export const metadata = {
   title: "Cortex - AI-Driven Research Assistant",
   description:
     "Organize your research with AI-powered note-taking and knowledge management",
+  icons: {
+    icon: { url: "/favicon.ico", type: "image/x-icon" },
+  },
 };
 
 export default function RootLayout({
