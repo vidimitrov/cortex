@@ -99,9 +99,9 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          <div className="mt-8 flex flex-col">
+          <div className="mt-8 flex flex-col w-full">
             <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-              <div className="inline-block min-w-full py-2 align-middle">
+              <div className="inline-block w-full py-2 align-middle">
                 <div className="overflow-hidden shadow-card rounded-lg border border-dark-border">
                   <table className="min-w-full divide-y divide-dark-border">
                     <thead className="bg-dark-card">
@@ -138,7 +138,7 @@ export default function Dashboard() {
                           <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-white sm:pl-6 lg:pl-8">
                             {session.title}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400">
+                          <td className="px-3 py-4 text-sm text-gray-400 max-w-md truncate">
                             {session.description}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400">

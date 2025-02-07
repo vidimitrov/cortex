@@ -99,7 +99,9 @@ export default function DashboardLayout({
                 </div>
                 <div className="ml-3 flex-1">
                   <p className="text-sm font-medium text-gray-300 group-hover:text-white">
-                    {user?.email}
+                    {user?.firstName && user?.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user?.email}
                   </p>
                 </div>
                 <button
