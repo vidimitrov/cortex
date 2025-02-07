@@ -16,8 +16,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full bg-dark-bg">
-      <body className="h-full">
+    <html
+      lang="en"
+      className="h-full bg-dark-bg"
+      data-gramm="false"
+      data-gramm_editor="false"
+      data-enable-grammarly="false"
+    >
+      <body
+        className="h-full"
+        data-gramm="false"
+        data-gramm_editor="false"
+        data-enable-grammarly="false"
+      >
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

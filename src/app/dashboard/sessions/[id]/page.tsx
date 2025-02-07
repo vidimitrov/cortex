@@ -3,22 +3,22 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSession, getKnowledgePieces } from "@/lib/supabase";
+import { getSession, getMessages, createMessage } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import {
-  DocumentTextIcon,
-  LinkIcon,
-  PlusIcon,
-  ArrowLeftIcon,
-} from "@heroicons/react/24/outline";
-import { Session, KnowledgePiece } from "@/types";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { Session, Message, StreamingMessage } from "@/types";
+import ChatInterface from "@/components/chat/ChatInterface";
+import { streamChatAction } from "@/app/actions/chat";
 
 export default function SessionPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
   const [session, setSession] = useState<Session | null>(null);
-  const [knowledgePieces, setKnowledgePieces] = useState<KnowledgePiece[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [streamingMessage, setStreamingMessage] = useState<
+    StreamingMessage | undefined
+  >();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -33,8 +33,8 @@ export default function SessionPage() {
 
         setSession(sessionData);
 
-        const pieces = await getKnowledgePieces(params.id as string);
-        setKnowledgePieces(pieces);
+        const existingMessages = await getMessages(params.id as string);
+        setMessages(existingMessages);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load session data"
@@ -90,80 +90,91 @@ export default function SessionPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Context Panel */}
           <div className="lg:col-span-1">
             <div className="bg-dark-card shadow-card rounded-lg border border-dark-border">
               <div className="px-4 py-5 border-b border-dark-border sm:px-6">
                 <h2 className="text-lg font-medium text-white">Context</h2>
                 <p className="mt-1 text-sm text-gray-400">
-                  Add resources to help with your research
+                  Coming soon: Add resources to help with your research
                 </p>
-              </div>
-              <div className="p-4">
-                <div className="space-y-4">
-                  <button className="btn-secondary w-full flex items-center justify-center">
-                    <DocumentTextIcon className="h-5 w-5 mr-2" />
-                    Add Text
-                  </button>
-                  <button className="btn-secondary w-full flex items-center justify-center">
-                    <LinkIcon className="h-5 w-5 mr-2" />
-                    Add URL
-                  </button>
-                </div>
               </div>
             </div>
           </div>
 
-          {/* Knowledge Pieces Panel */}
-          <div className="lg:col-span-2">
-            <div className="bg-dark-card shadow-card rounded-lg border border-dark-border">
-              <div className="px-4 py-5 border-b border-dark-border sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-medium text-white">
-                      Knowledge Pieces
-                    </h2>
-                    <p className="mt-1 text-sm text-gray-400">
-                      AI-generated summaries and insights
-                    </p>
-                  </div>
-                  <button className="btn-primary flex items-center">
-                    <PlusIcon className="h-5 w-5 mr-2" />
-                    Generate New
-                  </button>
-                </div>
-              </div>
-              <div className="p-4">
-                {knowledgePieces.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-sm text-gray-400">
-                      No knowledge pieces yet. Add some context and generate
-                      your first piece.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {knowledgePieces.map((piece) => (
-                      <div
-                        key={piece.id}
-                        className="p-4 bg-dark-hover rounded-lg border border-dark-border"
-                      >
-                        <div
-                          className="prose prose-sm prose-invert max-w-none"
-                          dangerouslySetInnerHTML={{
-                            __html: piece.structured_output,
-                          }}
-                        />
-                        <div className="mt-2 text-xs text-gray-400">
-                          Generated on{" "}
-                          {new Date(piece.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+          {/* Chat Interface */}
+          <div className="lg:col-span-3">
+            <div className="bg-dark-card shadow-card rounded-lg border border-dark-border h-[600px]">
+              <ChatInterface
+                messages={messages}
+                streamingMessage={streamingMessage}
+                onSendMessage={async (content) => {
+                  if (!user) {
+                    setError("User not authenticated");
+                    return;
+                  }
+
+                  try {
+                    // Create and save user message
+                    const userMessage = await createMessage(
+                      user.id,
+                      session.id,
+                      "user",
+                      content
+                    );
+                    setMessages((prev) => [...prev, userMessage]);
+
+                    // Start streaming the assistant's response
+                    setStreamingMessage({
+                      role: "assistant",
+                      content: "",
+                      isStreaming: true,
+                    });
+
+                    // Create form data for the server action
+                    const formData = new FormData();
+                    formData.append("message", content);
+
+                    // Call server action and handle response
+                    const response = await streamChatAction(null, formData);
+                    if (!response.success) {
+                      throw new Error(
+                        response.error || "Failed to get AI response"
+                      );
+                    }
+
+                    let fullResponse = "";
+                    for (const chunk of response.chunks) {
+                      fullResponse += chunk;
+                      setStreamingMessage({
+                        role: "assistant",
+                        content: fullResponse,
+                        isStreaming: true,
+                      });
+                      // Add a small delay to simulate streaming
+                      await new Promise((resolve) => setTimeout(resolve, 50));
+                    }
+
+                    // Save the complete assistant message
+                    const assistantMessage = await createMessage(
+                      user.id,
+                      session.id,
+                      "assistant",
+                      fullResponse
+                    );
+                    setMessages((prev) => [...prev, assistantMessage]);
+                    setStreamingMessage(undefined);
+                  } catch (err) {
+                    console.error("Error in chat:", err);
+                    setError(
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to process message"
+                    );
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
