@@ -13,6 +13,8 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,7 +35,7 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      await signUp(email, password);
+      await signUp(email, password, firstName, lastName);
       router.push("/dashboard");
     } catch (err) {
       setError(
@@ -143,6 +145,9 @@ export default function SignUp() {
                     id="first-name"
                     placeholder="eg. John"
                     className="w-full px-4 py-3 bg-dark-card rounded-lg border border-dark-border focus:border-primary-400 focus:ring-1 focus:ring-primary-400 transition-colors"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
                   />
                 </div>
                 <div>
@@ -157,6 +162,9 @@ export default function SignUp() {
                     id="last-name"
                     placeholder="eg. Francisco"
                     className="w-full px-4 py-3 bg-dark-card rounded-lg border border-dark-border focus:border-primary-400 focus:ring-1 focus:ring-primary-400 transition-colors"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
                   />
                 </div>
               </div>

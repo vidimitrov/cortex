@@ -9,7 +9,12 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string
+  ) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -33,6 +38,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           id: session.user.id,
           email: session.user.email,
+          firstName: session.user.user_metadata?.first_name,
+          lastName: session.user.user_metadata?.last_name,
         });
       }
       setLoading(false);
@@ -46,6 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           id: session.user.id,
           email: session.user.email,
+          firstName: session.user.user_metadata?.first_name,
+          lastName: session.user.user_metadata?.last_name,
         });
       } else {
         setUser(null);
@@ -68,19 +77,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           id: data.user.id,
           email: data.user.email,
+          firstName: data.user.user_metadata?.first_name,
+          lastName: data.user.user_metadata?.last_name,
         });
         router.push("/dashboard");
       }
     },
-    signUp: async (email: string, password: string) => {
+    signUp: async (
+      email: string,
+      password: string,
+      firstName: string,
+      lastName: string
+    ) => {
       const { data } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          },
+        },
       });
       if (data.user) {
         setUser({
           id: data.user.id,
           email: data.user.email,
+          firstName,
+          lastName,
         });
         router.push("/dashboard");
       }
