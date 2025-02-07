@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -49,7 +50,7 @@ export default function DashboardLayout({
     <div>
       {/* Mobile sidebar */}
       <div
-        className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity lg:hidden ${
+        className={`fixed inset-0 bg-black bg-opacity-75 transition-opacity lg:hidden ${
           sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setSidebarOpen(false)}
@@ -60,27 +61,28 @@ export default function DashboardLayout({
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex min-h-0 flex-1 flex-col bg-white border-r border-gray-200">
+        <div className="flex min-h-0 flex-1 flex-col bg-dark-card border-r border-dark-border">
           <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
-            <div className="flex flex-shrink-0 items-center px-4">
-              <h1 className="text-2xl font-bold text-gray-900">Cortex</h1>
+            <div className="flex flex-shrink-0 items-center px-4 gap-2">
+              <Image src="/logo.png" alt="Cortex Logo" width={32} height={32} />
+              <h1 className="text-2xl font-bold text-white">Cortex</h1>
             </div>
-            <nav className="mt-5 flex-1 space-y-1 bg-white px-2">
+            <nav className="mt-5 flex-1 space-y-1 px-2">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
                     item.current
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-primary-400/10 text-primary-400"
+                      : "text-gray-400 hover:bg-dark-hover hover:text-white"
                   }`}
                 >
                   <item.icon
                     className={`mr-3 h-6 w-6 flex-shrink-0 ${
                       item.current
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500"
+                        ? "text-primary-400"
+                        : "text-gray-400 group-hover:text-white"
                     }`}
                     aria-hidden="true"
                   />
@@ -89,20 +91,20 @@ export default function DashboardLayout({
               ))}
             </nav>
           </div>
-          <div className="flex flex-shrink-0 border-t border-gray-200 p-4">
+          <div className="flex flex-shrink-0 border-t border-dark-border p-4">
             <div className="group block w-full flex-shrink-0">
               <div className="flex items-center">
                 <div>
                   <UserCircleIcon className="inline-block h-9 w-9 rounded-full text-gray-400" />
                 </div>
                 <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                  <p className="text-sm font-medium text-gray-300 group-hover:text-white">
                     {user?.email}
                   </p>
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="ml-2 p-1 text-gray-400 hover:text-gray-500"
+                  className="ml-2 p-1 text-gray-400 hover:text-white transition-colors duration-200"
                 >
                   <ArrowLeftOnRectangleIcon className="h-6 w-6" />
                 </button>
@@ -113,10 +115,10 @@ export default function DashboardLayout({
       </div>
 
       {/* Mobile top bar */}
-      <div className="sticky top-0 z-10 flex h-16 flex-shrink-0 bg-white shadow lg:hidden">
+      <div className="sticky top-0 z-10 flex h-16 flex-shrink-0 bg-dark-card border-b border-dark-border lg:hidden">
         <button
           type="button"
-          className="px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 lg:hidden"
+          className="px-4 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-400 lg:hidden transition-colors duration-200"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           <span className="sr-only">Open sidebar</span>
@@ -129,9 +131,9 @@ export default function DashboardLayout({
       </div>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col lg:pl-64">
+      <div className="flex flex-1 flex-col lg:pl-64 min-h-screen bg-dark-bg">
         <main className="flex-1">
-          <div className="py-6">
+          <div className="py-6 text-white">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               {children}
             </div>

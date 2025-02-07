@@ -44,8 +44,8 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen-without-nav flex items-center justify-center">
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900">Error</h3>
-          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <h3 className="text-lg font-medium text-white">Error</h3>
+          <p className="mt-1 text-sm text-gray-400">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 btn-primary"
@@ -62,10 +62,10 @@ export default function Dashboard() {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-semibold text-white">
               Research Sessions
             </h1>
-            <p className="mt-2 text-sm text-gray-700">
+            <p className="mt-2 text-sm text-gray-400">
               Your research sessions and knowledge pieces
             </p>
           </div>
@@ -82,10 +82,10 @@ export default function Dashboard() {
 
         {sessions.length === 0 ? (
           <div className="mt-16 text-center">
-            <h3 className="text-lg font-medium text-gray-900">
+            <h3 className="text-lg font-medium text-white">
               No research sessions yet
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-400">
               Get started by creating a new research session
             </p>
             <div className="mt-6">
@@ -102,25 +102,25 @@ export default function Dashboard() {
           <div className="mt-8 flex flex-col">
             <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
               <div className="inline-block min-w-full py-2 align-middle">
-                <div className="overflow-hidden shadow-sm ring-1 ring-black ring-opacity-5">
-                  <table className="min-w-full divide-y divide-gray-300">
-                    <thead className="bg-gray-50">
+                <div className="overflow-hidden shadow-card rounded-lg border border-dark-border">
+                  <table className="min-w-full divide-y divide-dark-border">
+                    <thead className="bg-dark-card">
                       <tr>
                         <th
                           scope="col"
-                          className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 lg:pl-8"
+                          className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-white sm:pl-6 lg:pl-8"
                         >
                           Title
                         </th>
                         <th
                           scope="col"
-                          className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                          className="px-3 py-3.5 text-left text-sm font-semibold text-white"
                         >
                           Description
                         </th>
                         <th
                           scope="col"
-                          className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                          className="px-3 py-3.5 text-left text-sm font-semibold text-white"
                         >
                           Created
                         </th>
@@ -132,22 +132,22 @@ export default function Dashboard() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
+                    <tbody className="divide-y divide-dark-border bg-dark-bg">
                       {sessions.map((session) => (
                         <tr key={session.id}>
-                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-white sm:pl-6 lg:pl-8">
                             {session.title}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400">
                             {session.description}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400">
                             {new Date(session.created_at).toLocaleDateString()}
                           </td>
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
                             <Link
                               href={`/dashboard/sessions/${session.id}`}
-                              className="text-primary-600 hover:text-primary-900"
+                              className="text-primary-400 hover:text-primary-300 transition-colors duration-200"
                             >
                               View
                             </Link>

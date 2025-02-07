@@ -2,36 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 10%;
+    --foreground: 0 0% 100%;
   }
 
   body {
-    @apply antialiased;
+    @apply antialiased bg-dark-bg text-white;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500;
+    @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-soft-glow text-dark-bg bg-primary-400 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-all duration-200;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500;
+    @apply inline-flex items-center px-4 py-2 border border-primary-400 text-sm font-medium rounded-md text-primary-400 bg-transparent hover:bg-primary-400/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-all duration-200;
   }
 
   .input-field {
-    @apply block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6;
+    @apply block w-full rounded-md border-0 px-4 py-3 bg-dark-card text-white shadow-card ring-1 ring-inset ring-dark-border placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary-400 sm:text-sm sm:leading-6 transition-all duration-200;
   }
 
   .card {
-    @apply bg-white shadow-sm rounded-lg border border-gray-200;
+    @apply bg-dark-card shadow-card rounded-lg border border-dark-border backdrop-blur-sm;
   }
 
   .card-header {
-    @apply px-4 py-5 border-b border-gray-200 sm:px-6;
+    @apply px-4 py-5 border-b border-dark-border sm:px-6;
   }
 
   .card-body {
@@ -39,7 +41,7 @@
   }
 
   .card-footer {
-    @apply px-4 py-4 sm:px-6 border-t border-gray-200;
+    @apply px-4 py-4 sm:px-6 border-t border-dark-border;
   }
 }
 

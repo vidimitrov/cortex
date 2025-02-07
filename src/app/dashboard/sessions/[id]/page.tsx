@@ -59,8 +59,8 @@ export default function SessionPage() {
     return (
       <div className="min-h-screen-without-nav flex items-center justify-center">
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900">Error</h3>
-          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <h3 className="text-lg font-medium text-white">Error</h3>
+          <p className="mt-1 text-sm text-gray-400">{error}</p>
           <button
             onClick={() => router.push("/dashboard")}
             className="mt-4 btn-primary"
@@ -78,25 +78,25 @@ export default function SessionPage() {
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => router.back()}
-            className="p-2 text-gray-400 hover:text-gray-500"
+            className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
           >
             <ArrowLeftIcon className="h-6 w-6" />
           </button>
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-semibold text-white">
               {session.title}
             </h1>
-            <p className="mt-1 text-sm text-gray-500">{session.description}</p>
+            <p className="mt-1 text-sm text-gray-400">{session.description}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Context Panel */}
           <div className="lg:col-span-1">
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-              <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
-                <h2 className="text-lg font-medium text-gray-900">Context</h2>
-                <p className="mt-1 text-sm text-gray-500">
+            <div className="bg-dark-card shadow-card rounded-lg border border-dark-border">
+              <div className="px-4 py-5 border-b border-dark-border sm:px-6">
+                <h2 className="text-lg font-medium text-white">Context</h2>
+                <p className="mt-1 text-sm text-gray-400">
                   Add resources to help with your research
                 </p>
               </div>
@@ -117,14 +117,14 @@ export default function SessionPage() {
 
           {/* Knowledge Pieces Panel */}
           <div className="lg:col-span-2">
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-              <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
+            <div className="bg-dark-card shadow-card rounded-lg border border-dark-border">
+              <div className="px-4 py-5 border-b border-dark-border sm:px-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-medium text-gray-900">
+                    <h2 className="text-lg font-medium text-white">
                       Knowledge Pieces
                     </h2>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-gray-400">
                       AI-generated summaries and insights
                     </p>
                   </div>
@@ -137,7 +137,7 @@ export default function SessionPage() {
               <div className="p-4">
                 {knowledgePieces.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-400">
                       No knowledge pieces yet. Add some context and generate
                       your first piece.
                     </p>
@@ -147,15 +147,15 @@ export default function SessionPage() {
                     {knowledgePieces.map((piece) => (
                       <div
                         key={piece.id}
-                        className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                        className="p-4 bg-dark-hover rounded-lg border border-dark-border"
                       >
                         <div
-                          className="prose prose-sm max-w-none"
+                          className="prose prose-sm prose-invert max-w-none"
                           dangerouslySetInnerHTML={{
                             __html: piece.structured_output,
                           }}
                         />
-                        <div className="mt-2 text-xs text-gray-500">
+                        <div className="mt-2 text-xs text-gray-400">
                           Generated on{" "}
                           {new Date(piece.created_at).toLocaleDateString()}
                         </div>

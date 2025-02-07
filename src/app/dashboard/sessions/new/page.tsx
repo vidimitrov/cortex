@@ -37,23 +37,23 @@ export default function NewSession() {
     <div className="py-6">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold text-white">
             Create New Research Session
           </h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <p className="mt-2 text-sm text-gray-400">
             Start a new research session by providing a title and description.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-8">
           <div>
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-300"
             >
               Title
             </label>
-            <div className="mt-1">
+            <div className="mt-2">
               <input
                 type="text"
                 id="title"
@@ -70,11 +70,11 @@ export default function NewSession() {
           <div>
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-300"
             >
               Description
             </label>
-            <div className="mt-1">
+            <div className="mt-2">
               <textarea
                 id="description"
                 name="description"
@@ -88,7 +88,7 @@ export default function NewSession() {
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
+            <div className="text-red-400 text-sm text-center">{error}</div>
           )}
 
           <div className="flex justify-end gap-4">
