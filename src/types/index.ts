@@ -33,3 +33,25 @@ export type SessionWithResources = Session & {
 export type SessionWithKnowledgePieces = Session & {
   knowledgePieces: KnowledgePiece[];
 };
+
+export type MessageRole = "user" | "assistant";
+
+export type Message = Database["public"]["Tables"]["messages"]["Row"] & {
+  role: MessageRole;
+};
+
+export type StreamingMessage = {
+  role: MessageRole;
+  content: string;
+  isStreaming: boolean;
+};
+
+export type ChatActionResponse =
+  | {
+      success: true;
+      chunks: string[];
+    }
+  | {
+      success: false;
+      error: string;
+    };

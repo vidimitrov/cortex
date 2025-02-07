@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database";
+import { Message } from "@/types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -105,4 +106,38 @@ export async function createKnowledgePiece(
 
   if (error) throw error;
   return data;
+}
+
+export async function getMessages(sessionId: string) {
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+  return data as Message[];
+}
+
+export async function createMessage(
+  userId: string,
+  sessionId: string,
+  role: "user" | "assistant",
+  content: string
+) {
+  const { data, error } = await supabase
+    .from("messages")
+    .insert([
+      {
+        user_id: userId,
+        session_id: sessionId,
+        role,
+        content,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Message;
 }
