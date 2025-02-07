@@ -142,6 +142,7 @@ export type Database = {
           role: string
           content: string
           created_at: string
+          embedding: number[] | null
         }
         Insert: {
           id?: string
@@ -150,6 +151,7 @@ export type Database = {
           role: string
           content: string
           created_at?: string
+          embedding?: number[] | null
         }
         Update: {
           id?: string
@@ -158,6 +160,7 @@ export type Database = {
           role?: string
           content?: string
           created_at?: string
+          embedding?: number[] | null
         }
         Relationships: [
           {
@@ -181,7 +184,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_messages: {
+        Args: {
+          query_embedding: number[]
+          match_threshold: number
+          match_count: number
+          p_session_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          user_id: string
+          role: string
+          content: string
+          created_at: string
+          embedding: number[]
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSession, getMessages, createMessage } from "@/lib/supabase";
+import { getSession, getMessages } from "@/lib/supabase";
+import { createMessageWithEmbedding } from "@/app/actions/embeddings";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Session, Message, StreamingMessage } from "@/types";
@@ -21,6 +22,75 @@ export default function SessionPage() {
   >();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      if (!user || !session) {
+        setError("User not authenticated");
+        return;
+      }
+
+      try {
+        // Create and save user message
+        const userMessage = await createMessageWithEmbedding(
+          user.id,
+          session.id,
+          "user",
+          content
+        );
+        setMessages((prev) => [...prev, userMessage]);
+
+        // Start streaming the assistant's response
+        setStreamingMessage({
+          role: "assistant",
+          content: "",
+          isStreaming: true,
+        });
+
+        // Create form data for the server action
+        const formData = new FormData();
+        formData.append("message", content);
+
+        // Call server action and handle response
+        const response = await streamChatAction(null, formData, session.id);
+        if (!response.success) {
+          throw new Error(response.error || "Failed to get AI response");
+        }
+
+        let fullResponse = "";
+        for (const chunk of response.chunks) {
+          fullResponse += chunk;
+          setStreamingMessage({
+            role: "assistant",
+            content: fullResponse,
+            isStreaming: true,
+          });
+          // Add a small delay to simulate streaming
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+
+        // Save the complete assistant message
+        const assistantMessage = await createMessageWithEmbedding(
+          user.id,
+          session.id,
+          "assistant",
+          fullResponse
+        );
+        setMessages((prev) => [...prev, assistantMessage]);
+        setStreamingMessage(undefined);
+      } catch (err) {
+        console.error("Error in chat:", err);
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : typeof err === "object" && err !== null
+            ? JSON.stringify(err)
+            : "Failed to process message";
+        setError(errorMessage);
+      }
+    },
+    [user, session, setMessages, setStreamingMessage, setError]
+  );
 
   useEffect(() => {
     const fetchSessionData = async () => {
@@ -109,71 +179,7 @@ export default function SessionPage() {
               <ChatInterface
                 messages={messages}
                 streamingMessage={streamingMessage}
-                onSendMessage={async (content) => {
-                  if (!user) {
-                    setError("User not authenticated");
-                    return;
-                  }
-
-                  try {
-                    // Create and save user message
-                    const userMessage = await createMessage(
-                      user.id,
-                      session.id,
-                      "user",
-                      content
-                    );
-                    setMessages((prev) => [...prev, userMessage]);
-
-                    // Start streaming the assistant's response
-                    setStreamingMessage({
-                      role: "assistant",
-                      content: "",
-                      isStreaming: true,
-                    });
-
-                    // Create form data for the server action
-                    const formData = new FormData();
-                    formData.append("message", content);
-
-                    // Call server action and handle response
-                    const response = await streamChatAction(null, formData);
-                    if (!response.success) {
-                      throw new Error(
-                        response.error || "Failed to get AI response"
-                      );
-                    }
-
-                    let fullResponse = "";
-                    for (const chunk of response.chunks) {
-                      fullResponse += chunk;
-                      setStreamingMessage({
-                        role: "assistant",
-                        content: fullResponse,
-                        isStreaming: true,
-                      });
-                      // Add a small delay to simulate streaming
-                      await new Promise((resolve) => setTimeout(resolve, 50));
-                    }
-
-                    // Save the complete assistant message
-                    const assistantMessage = await createMessage(
-                      user.id,
-                      session.id,
-                      "assistant",
-                      fullResponse
-                    );
-                    setMessages((prev) => [...prev, assistantMessage]);
-                    setStreamingMessage(undefined);
-                  } catch (err) {
-                    console.error("Error in chat:", err);
-                    setError(
-                      err instanceof Error
-                        ? err.message
-                        : "Failed to process message"
-                    );
-                  }
-                }}
+                onSendMessage={handleSendMessage}
               />
             </div>
           </div>
