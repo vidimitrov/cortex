@@ -121,7 +121,6 @@ export async function getMessages(sessionId: string) {
   return data as Message[];
 }
 
-// Create a server-side admin client that bypasses RLS
 export const createAdminClient = () => {
   if (!supabaseServiceKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations');

@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Session } from "@/types";
 import { getSessions } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { deleteResearchSession } from "@/app/actions/sessions";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -31,6 +34,26 @@ export default function Dashboard() {
 
     fetchSessions();
   }, [user]);
+
+  const handleDelete = async (sessionId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this session? This will delete all related resources and cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setDeleteError(null);
+    startTransition(async () => {
+      const result = await deleteResearchSession(sessionId);
+      if (result.success) {
+        setSessions(sessions.filter((s) => s.id !== sessionId));
+      } else {
+        setDeleteError(result.error);
+      }
+    });
+  };
 
   if (loading) {
     return (
@@ -68,6 +91,9 @@ export default function Dashboard() {
             <p className="mt-2 text-sm text-gray-400">
               Your research sessions and knowledge pieces
             </p>
+            {deleteError && (
+              <p className="mt-2 text-sm text-red-500">{deleteError}</p>
+            )}
           </div>
           <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
             <Link
@@ -128,7 +154,7 @@ export default function Dashboard() {
                           scope="col"
                           className="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8"
                         >
-                          <span className="sr-only">View</span>
+                          <span className="sr-only">Actions</span>
                         </th>
                       </tr>
                     </thead>
@@ -145,12 +171,21 @@ export default function Dashboard() {
                             {new Date(session.created_at).toLocaleDateString()}
                           </td>
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
-                            <Link
-                              href={`/dashboard/sessions/${session.id}`}
-                              className="text-primary-400 hover:text-primary-300 transition-colors duration-200"
-                            >
-                              View
-                            </Link>
+                            <div className="flex items-center justify-end space-x-4">
+                              <Link
+                                href={`/dashboard/sessions/${session.id}`}
+                                className="text-primary-400 hover:text-primary-300 transition-colors duration-200"
+                              >
+                                View
+                              </Link>
+                              <button
+                                onClick={() => handleDelete(session.id)}
+                                disabled={isPending}
+                                className="text-red-500 hover:text-red-400 transition-colors duration-200 disabled:opacity-50"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
