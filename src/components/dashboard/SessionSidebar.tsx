@@ -1,7 +1,8 @@
 import { Session } from "@/types";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import SessionListItem from "./SessionListItem";
+import { AnimatePresence } from "framer-motion";
+import AnimatedSessionCard from "./AnimatedSessionCard";
 
 interface SessionSidebarProps {
   sessions: Session[];
@@ -30,14 +31,16 @@ export default function SessionSidebar({
       {/* Sessions List */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-2 space-y-1">
-          {sessions.map((session) => (
-            <SessionListItem
-              key={session.id}
-              session={session}
-              isActive={session.id === activeSessionId}
-              onClick={() => onSessionSelect(session.id)}
-            />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {sessions.map((session) => (
+              <AnimatedSessionCard
+                key={session.id}
+                session={session}
+                isActive={session.id === activeSessionId}
+                onClick={() => onSessionSelect(session.id)}
+              />
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </div>

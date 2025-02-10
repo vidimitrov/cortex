@@ -14,6 +14,9 @@ import SessionHeader from "@/components/dashboard/SessionHeader";
 import SessionListItem from "@/components/dashboard/SessionListItem";
 import Link from "next/link";
 import { PlusIcon } from "@heroicons/react/24/outline";
+import Modal from "@/components/ui/Modal";
+import { AnimatePresence } from "framer-motion";
+import AnimatedSessionCard from "@/components/dashboard/AnimatedSessionCard";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -111,21 +114,25 @@ export default function Dashboard() {
     handleInitialPrompt();
   }, [session, user, messages.length, sessionId]);
 
-  const handleDelete = async () => {
-    if (!session) return;
-    if (
-      !confirm(
-        "Are you sure you want to delete this session? This will delete all related resources and cannot be undone."
-      )
-    ) {
-      return;
-    }
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const handleDelete = () => {
+    if (!session) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!session) return;
     startTransition(async () => {
+      setShowDeleteModal(false);
       const result = await deleteResearchSession(session.id);
       if (result.success) {
-        // Clear the session using router
-        router.push("/dashboard");
+        // Update sessions list immediately to trigger animation
+        setSessions(prevSessions => prevSessions.filter(s => s.id !== session.id));
+        // Clear the current session immediately to show the dashboard view
+        setSession(null);
+        // Replace URL without waiting for animation since we're already showing the dashboard
+        router.replace("/dashboard", { scroll: false });
       } else {
         setError(result.error ?? "Failed to delete session");
       }
@@ -230,24 +237,18 @@ export default function Dashboard() {
               Recent Sessions
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sessions
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .slice(0, 3)
-                .map((recentSession) => (
-                  <div
-                    key={recentSession.id}
-                    className="bg-dark-card border border-dark-border rounded-lg overflow-hidden hover:border-primary-400/50 transition-colors duration-200"
-                    onClick={() => router.push(`/dashboard?session=${recentSession.id}`)}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <SessionListItem
+              <AnimatePresence mode="popLayout">
+                {sessions
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .slice(0, 3)
+                  .map((recentSession) => (
+                    <AnimatedSessionCard
+                      key={recentSession.id}
                       session={recentSession}
-                      isActive={false}
                       onClick={() => router.push(`/dashboard?session=${recentSession.id}`)}
                     />
-                  </div>
-                ))}
+                  ))}
+              </AnimatePresence>
             </div>
           </div>
         )}
@@ -268,6 +269,16 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.16))]">
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Session"
+        description="Are you sure you want to delete this session? This will delete all related resources and cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleConfirmDelete}
+        isDestructive={true}
+        isProcessing={isPending}
+      />
       <SessionHeader
         session={session}
         onDelete={handleDelete}

@@ -103,19 +103,7 @@ export async function deleteResearchSession(sessionId: string) {
       }
     });
 
-    // First try to delete messages since they might have stricter RLS policies
-    const { error: messagesError } = await adminClient
-      .from("messages")
-      .delete()
-      .eq("session_id", sessionId);
-    
-    if (messagesError) {
-      console.error("Error deleting messages:", messagesError);
-      // Continue with session deletion even if messages deletion fails
-      // The ON DELETE CASCADE should handle it
-    }
-
-    // Delete the session which will cascade delete other resources
+    // Delete the session which will cascade delete all related resources
     const { error: sessionError } = await adminClient
       .from("sessions")
       .delete()
