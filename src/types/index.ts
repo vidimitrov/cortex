@@ -55,3 +55,12 @@ export type ChatActionResponse =
       success: false;
       error: string;
     };
+
+export type CreateSessionResponse = {
+  success: true;
+  session: Session;
+  prompt: string;
+} | {
+  success: false;
+  error: string;
+};

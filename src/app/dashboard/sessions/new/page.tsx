@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { createSession } from "@/lib/supabase";
+import { createSessionWithPrompt } from "@/app/actions/sessions";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function NewSession() {
@@ -14,21 +14,44 @@ export default function NewSession() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Wait for user to be available before allowing form submission
+  useEffect(() => {
+    if (!user) {
+      setIsLoading(true);
+    } else {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      if (!user) throw new Error("Not authenticated");
-      await createSession(user.id, title, description);
-      router.push("/dashboard");
+      if (!user) {
+        setError("Please wait while we authenticate you...");
+        return;
+      }
+      const result = await createSessionWithPrompt(user.id, title, description);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // Encode the prompt to safely use it in the URL
+      const encodedPrompt = encodeURIComponent(result.prompt);
+      const newSessionUrl = `/dashboard/sessions/${result.session.id}?prompt=${encodedPrompt}`;
+
+      // Keep loading state active during navigation
+      router.push(newSessionUrl);
+      return; // Prevent setting isLoading to false since we're navigating away
     } catch (err) {
-      setError(
+      const errorMessage =
         err instanceof Error
           ? err.message
-          : "Failed to create session. Please try again."
-      );
+          : "Failed to create session. Please try again.";
+      setError(errorMessage);
       setIsLoading(false);
     }
   };
