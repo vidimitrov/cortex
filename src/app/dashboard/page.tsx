@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Session, Message, StreamingMessage } from "@/types";
-import { getSession, getMessages } from "@/lib/supabase";
+import { getSession, getMessages, getSessions } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { deleteResearchSession } from "@/app/actions/sessions";
@@ -11,6 +11,9 @@ import { createMessageWithEmbedding } from "@/app/actions/embeddings";
 import { streamChatAction } from "@/app/actions/chat";
 import ChatInterface from "@/components/chat/ChatInterface";
 import SessionHeader from "@/components/dashboard/SessionHeader";
+import SessionListItem from "@/components/dashboard/SessionListItem";
+import Link from "next/link";
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -19,6 +22,7 @@ export default function Dashboard() {
   const sessionId = searchParams.get("session");
   
   const [session, setSession] = useState<Session | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [streamingMessage, setStreamingMessage] = useState<StreamingMessage>();
   const [loading, setLoading] = useState(true);
@@ -27,6 +31,20 @@ export default function Dashboard() {
 
   // Track if initial prompt has been sent
   const initialPromptSent = useRef(false);
+
+  // Load all sessions
+  useEffect(() => {
+    const fetchAllSessions = async () => {
+      if (!user) return;
+      try {
+        const data = await getSessions(user.id);
+        setSessions(data);
+      } catch (err) {
+        console.error("Error fetching all sessions:", err);
+      }
+    };
+    fetchAllSessions();
+  }, [user]);
 
   // Separate effect for loading session data
   useEffect(() => {
@@ -204,14 +222,45 @@ export default function Dashboard() {
 
   if (!session) {
     return (
-      <div className="min-h-screen-without-nav flex items-center justify-center">
-        <div className="text-center">
-          <h3 className="text-lg font-medium text-white">
-            Select a session from the sidebar
-          </h3>
-          <p className="mt-1 text-sm text-gray-400">
-            Or create a new session to get started
-          </p>
+      <div className="min-h-screen-without-nav flex flex-col justify-center gap-8 px-4">
+        {/* Recent Sessions */}
+        {sessions.length > 0 && (
+          <div className="w-full max-w-3xl mx-auto">
+            <h3 className="text-lg font-medium text-white mb-4">
+              Recent Sessions
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sessions
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .slice(0, 3)
+                .map((recentSession) => (
+                  <div
+                    key={recentSession.id}
+                    className="bg-dark-card border border-dark-border rounded-lg overflow-hidden hover:border-primary-400/50 transition-colors duration-200"
+                    onClick={() => router.push(`/dashboard?session=${recentSession.id}`)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <SessionListItem
+                      session={recentSession}
+                      isActive={false}
+                      onClick={() => router.push(`/dashboard?session=${recentSession.id}`)}
+                    />
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* New Session CTA */}
+        <div className="w-full max-w-3xl mx-auto">
+          <Link
+            href="/dashboard/sessions/new"
+            className="btn-primary w-full flex items-center justify-center gap-2 py-3"
+          >
+            <PlusIcon className="h-5 w-5" />
+            New Session
+          </Link>
         </div>
       </div>
     );
