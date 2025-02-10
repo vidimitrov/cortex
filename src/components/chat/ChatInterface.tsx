@@ -36,7 +36,7 @@ export default function ChatInterface({
   return (
     <div className="flex flex-col h-full">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         <div className="space-y-px">
           {messages.map((message) => (
             <Message

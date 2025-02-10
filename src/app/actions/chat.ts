@@ -4,8 +4,10 @@ import { ChatOpenAI } from "langchain/chat_models/openai";
 import { StringOutputParser } from "langchain/schema/output_parser";
 import { RunnableSequence } from "langchain/schema/runnable";
 import { ChatPromptTemplate } from "langchain/prompts";
-import { ChatActionResponse } from "@/types";
+import { ChatActionResponse, Message, MessageRole } from "@/types";
 import { findSimilarMessages } from "./embeddings";
+import { updateKnowledgePiece } from "./knowledge";
+import { getMessages } from "@/lib/supabase";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("Missing OPENAI_API_KEY environment variable");
@@ -62,6 +64,19 @@ export async function streamChatAction(
     for await (const chunk of stream) {
       chunks.push(chunk);
     }
+
+    // Get all messages and update the knowledge piece
+    const existingMessages = await getMessages(sessionId);
+    const allMessages = [...existingMessages, { 
+      role: "assistant" as MessageRole, 
+      content: chunks.join(""), 
+      id: "", 
+      created_at: new Date().toISOString(), 
+      session_id: sessionId,
+      user_id: "system", // Since this is an AI response
+      embedding: null // We don't need embedding for knowledge piece generation
+    }];
+    await updateKnowledgePiece(sessionId, allMessages);
 
     return { success: true, chunks };
   } catch (error) {

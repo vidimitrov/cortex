@@ -39,11 +39,11 @@ export default function DashboardLayout({
         setLoading(true);
         const data = await getSessions(user.id);
         setSessions(data);
-        
+
         // If there's a session ID in the URL, set it as active
-        const sessionId = searchParams.get('session');
+        const sessionId = searchParams.get("session");
         setActiveSessionId(sessionId || undefined);
-        
+
         setLoading(false);
       } catch (err) {
         console.error("Error fetching sessions:", err);
@@ -56,7 +56,7 @@ export default function DashboardLayout({
 
   const handleSessionSelect = (sessionId: string) => {
     setActiveSessionId(sessionId);
-    router.push(`/dashboard?session=${sessionId}`);
+    router.push(`/dashboard/sessions/${sessionId}`);
   };
 
   const handleSignOut = async () => {
@@ -88,12 +88,12 @@ export default function DashboardLayout({
               <Image src="/logo.png" alt="Cortex Logo" width={32} height={32} />
               <h1 className="text-2xl font-bold text-white">Cortex</h1>
             </div>
-          {/* Sessions Sidebar */}
-          <SessionSidebar
-            sessions={sessions}
-            activeSessionId={activeSessionId}
-            onSessionSelect={handleSessionSelect}
-          />
+            {/* Sessions Sidebar */}
+            <SessionSidebar
+              sessions={sessions}
+              activeSessionId={activeSessionId}
+              onSessionSelect={handleSessionSelect}
+            />
           </div>
           <div className="flex flex-shrink-0 border-t border-dark-border p-4">
             <div className="group block w-full flex-shrink-0">

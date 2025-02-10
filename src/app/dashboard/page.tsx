@@ -23,7 +23,7 @@ export default function Dashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session");
-  
+
   const [session, setSession] = useState<Session | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -66,7 +66,7 @@ export default function Dashboard() {
         setError(null);
         setMessages([]);
         setStreamingMessage(undefined);
-        
+
         const sessionData = await getSession(sessionId);
         if (!sessionData) throw new Error("Session not found");
         if (sessionData.user_id !== user.id) throw new Error("Unauthorized");
@@ -75,7 +75,9 @@ export default function Dashboard() {
         setSession(sessionData);
         setMessages(existingMessages);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load session data");
+        setError(
+          err instanceof Error ? err.message : "Failed to load session data"
+        );
         setSession(null);
       } finally {
         setLoading(false);
@@ -90,12 +92,18 @@ export default function Dashboard() {
   // Separate effect for handling initial prompt
   useEffect(() => {
     const handleInitialPrompt = async () => {
-      if (!session || !user || initialPromptSent.current || messages.length > 0 || loading) {
+      if (
+        !session ||
+        !user ||
+        initialPromptSent.current ||
+        messages.length > 0 ||
+        loading
+      ) {
         return;
       }
 
       const urlParams = new URLSearchParams(window.location.search);
-      const prompt = urlParams.get('prompt');
+      const prompt = urlParams.get("prompt");
       if (!prompt) return;
 
       try {
@@ -107,7 +115,9 @@ export default function Dashboard() {
         await handleSendMessage(decodedPrompt);
       } catch (err) {
         console.error("Error sending initial prompt:", err);
-        setError("Failed to start conversation. Please try refreshing the page.");
+        setError(
+          "Failed to start conversation. Please try refreshing the page."
+        );
       }
     };
 
@@ -116,7 +126,7 @@ export default function Dashboard() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!session) return;
     setShowDeleteModal(true);
   };
@@ -128,7 +138,9 @@ export default function Dashboard() {
       const result = await deleteResearchSession(session.id);
       if (result.success) {
         // Update sessions list immediately to trigger animation
-        setSessions(prevSessions => prevSessions.filter(s => s.id !== session.id));
+        setSessions((prevSessions) =>
+          prevSessions.filter((s) => s.id !== session.id)
+        );
         // Clear the current session immediately to show the dashboard view
         setSession(null);
         // Replace URL without waiting for animation since we're already showing the dashboard
@@ -194,9 +206,7 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Error in chat:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to process message"
+        err instanceof Error ? err.message : "Failed to process message"
       );
       setStreamingMessage(undefined);
     }
@@ -217,7 +227,7 @@ export default function Dashboard() {
           <h3 className="text-lg font-medium text-white">Error</h3>
           <p className="mt-1 text-sm text-gray-400">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={async () => window.location.reload()}
             className="mt-4 btn-primary"
           >
             Try Again
@@ -239,13 +249,19 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <AnimatePresence mode="popLayout">
                 {sessions
-                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .sort(
+                    (a, b) =>
+                      new Date(b.created_at).getTime() -
+                      new Date(a.created_at).getTime()
+                  )
                   .slice(0, 3)
                   .map((recentSession) => (
                     <AnimatedSessionCard
                       key={recentSession.id}
                       session={recentSession}
-                      onClick={() => router.push(`/dashboard?session=${recentSession.id}`)}
+                      onClick={async () =>
+                        router.push(`/dashboard?session=${recentSession.id}`)
+                      }
                     />
                   ))}
               </AnimatePresence>
@@ -271,7 +287,7 @@ export default function Dashboard() {
     <div className="flex flex-col h-[calc(100vh-theme(spacing.16))]">
       <Modal
         isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        onClose={async () => setShowDeleteModal(false)}
         title="Delete Session"
         description="Are you sure you want to delete this session? This will delete all related resources and cannot be undone."
         confirmLabel="Delete"

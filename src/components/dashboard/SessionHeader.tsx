@@ -1,29 +1,32 @@
+import React from "react";
 import { Session } from "@/types";
 import { TrashIcon } from "@heroicons/react/24/outline";
 
 interface SessionHeaderProps {
   session: Session;
-  onDelete: () => void;
-  isDeleting?: boolean;
+  onDelete: () => Promise<void>;
+  isDeleting: boolean;
 }
 
 export default function SessionHeader({
   session,
   onDelete,
-  isDeleting = false,
+  isDeleting,
 }: SessionHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-dark-border">
+    <div className="bg-dark-surface border-b border-dark-border p-6 flex justify-between items-start">
       <div>
-        <h1 className="text-xl font-semibold text-white">{session.title}</h1>
+        <h1 className="text-2xl font-semibold text-white mb-2">
+          {session.title}
+        </h1>
         {session.description && (
-          <p className="mt-1 text-sm text-gray-400">{session.description}</p>
+          <p className="text-gray-400">{session.description}</p>
         )}
       </div>
       <button
         onClick={onDelete}
         disabled={isDeleting}
-        className="p-2 text-red-500 hover:text-red-400 transition-colors duration-200 disabled:opacity-50"
+        className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
         title="Delete session"
       >
         <TrashIcon className="h-5 w-5" />
