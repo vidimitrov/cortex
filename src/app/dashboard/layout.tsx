@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Session } from "@/types";
 import { getSessions } from "@/lib/supabase";
@@ -30,19 +30,19 @@ export default function DashboardLayout({
   const [activeSessionId, setActiveSessionId] = useState<string>();
   const [loading, setLoading] = useState(true);
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     const fetchSessions = async () => {
       if (!user) return;
       try {
+        setLoading(true);
         const data = await getSessions(user.id);
         setSessions(data);
         
         // If there's a session ID in the URL, set it as active
-        const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('session');
-        if (sessionId) {
-          setActiveSessionId(sessionId);
-        }
+        const sessionId = searchParams.get('session');
+        setActiveSessionId(sessionId || undefined);
         
         setLoading(false);
       } catch (err) {
@@ -52,12 +52,11 @@ export default function DashboardLayout({
     };
 
     fetchSessions();
-  }, [user, pathname]); // Re-fetch when pathname changes (i.e., after new session creation)
+  }, [user, searchParams]); // Re-fetch when URL params change (including session deletion)
 
   const handleSessionSelect = (sessionId: string) => {
     setActiveSessionId(sessionId);
-    // Update URL without full navigation
-    window.history.pushState({}, "", `/dashboard?session=${sessionId}`);
+    router.push(`/dashboard?session=${sessionId}`);
   };
 
   const handleSignOut = async () => {

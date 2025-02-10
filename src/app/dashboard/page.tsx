@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Session, Message, StreamingMessage } from "@/types";
 import { getSession, getMessages } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { deleteResearchSession } from "@/app/actions/sessions";
 import { createMessageWithEmbedding } from "@/app/actions/embeddings";
 import { streamChatAction } from "@/app/actions/chat";
@@ -14,6 +14,7 @@ import SessionHeader from "@/components/dashboard/SessionHeader";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session");
   
@@ -32,10 +33,19 @@ export default function Dashboard() {
     const fetchSessionData = async () => {
       if (!user || !sessionId) {
         setLoading(false);
+        setSession(null);
+        setMessages([]);
+        setStreamingMessage(undefined);
+        setError(null);
         return;
       }
 
       try {
+        setLoading(true);
+        setError(null);
+        setMessages([]);
+        setStreamingMessage(undefined);
+        
         const sessionData = await getSession(sessionId);
         if (!sessionData) throw new Error("Session not found");
         if (sessionData.user_id !== user.id) throw new Error("Unauthorized");
@@ -43,15 +53,17 @@ export default function Dashboard() {
         const existingMessages = await getMessages(sessionId);
         setSession(sessionData);
         setMessages(existingMessages);
-        setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load session data");
+        setSession(null);
+      } finally {
         setLoading(false);
       }
     };
 
-    setLoading(true);
     fetchSessionData();
+    // Reset initialPromptSent when session changes
+    initialPromptSent.current = false;
   }, [user, sessionId]);
 
   // Separate effect for handling initial prompt
@@ -68,7 +80,7 @@ export default function Dashboard() {
       try {
         initialPromptSent.current = true;
         // Remove prompt from URL
-        window.history.replaceState({}, "", `/dashboard?session=${sessionId}`);
+        router.replace(`/dashboard?session=${sessionId}`);
         // Send the initial prompt
         const decodedPrompt = decodeURIComponent(prompt);
         await handleSendMessage(decodedPrompt);
@@ -94,10 +106,8 @@ export default function Dashboard() {
     startTransition(async () => {
       const result = await deleteResearchSession(session.id);
       if (result.success) {
-        // Clear the session from URL and state
-        window.history.pushState({}, "", "/dashboard");
-        setSession(null);
-        setMessages([]);
+        // Clear the session using router
+        router.push("/dashboard");
       } else {
         setError(result.error ?? "Failed to delete session");
       }
