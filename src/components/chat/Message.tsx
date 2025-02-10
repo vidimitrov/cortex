@@ -47,7 +47,11 @@ export default function Message({
               li: ({ children }) => (
                 <li className="leading-relaxed">{children}</li>
               ),
-              code: ({ inline, className, children, ...props }: any) =>
+              code: ({
+                inline,
+                children,
+                ...props
+              }: React.HTMLProps<HTMLElement> & { inline?: boolean }) =>
                 inline ? (
                   <code className="bg-gray-800 rounded px-1 py-0.5" {...props}>
                     {children}

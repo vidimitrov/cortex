@@ -182,7 +182,7 @@ export default function SessionPage() {
     };
 
     handleInitialPrompt();
-  }, [session, user, messages, searchParams]); // Removed handleSendMessage from dependencies
+  }, [session, user, messages, searchParams, handleSendMessage]);
 
   if (isLoading) {
     return (

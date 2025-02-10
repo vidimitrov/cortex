@@ -50,7 +50,7 @@ export default function Dashboard() {
       if (result.success) {
         setSessions(sessions.filter((s) => s.id !== sessionId));
       } else {
-        setDeleteError(result.error);
+        setDeleteError(result.error ?? "An unknown error occurred");
       }
     });
   };
