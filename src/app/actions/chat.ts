@@ -4,7 +4,7 @@ import { ChatOpenAI } from "langchain/chat_models/openai";
 import { StringOutputParser } from "langchain/schema/output_parser";
 import { RunnableSequence } from "langchain/schema/runnable";
 import { ChatPromptTemplate } from "langchain/prompts";
-import { ChatActionResponse, Message } from "@/types";
+import { ChatActionResponse } from "@/types";
 import { findSimilarMessages } from "./embeddings";
 
 if (!process.env.OPENAI_API_KEY) {
@@ -34,7 +34,7 @@ const chatChain = RunnableSequence.from([
 ]);
 
 export async function streamChatAction(
-  prevState: any,
+  prevState: ChatActionResponse | null,
   formData: FormData,
   sessionId: string
 ): Promise<ChatActionResponse> {

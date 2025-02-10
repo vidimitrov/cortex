@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache';
-import OpenAI from 'openai';
 import { generateEmbedding } from '@/lib/embeddings';
 import { createAdminClient } from '@/lib/supabase';
 import { Message, MessageRole } from '@/types';
