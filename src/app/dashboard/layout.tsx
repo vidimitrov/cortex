@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { Session } from "@/types";
+import { getSessions } from "@/lib/supabase";
+import SessionSidebar from "@/components/dashboard/SessionSidebar";
 import {
   Bars3Icon,
   XMarkIcon,
@@ -23,20 +25,40 @@ export default function DashboardLayout({
   const { user, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navigation = [
-    {
-      name: "Research Sessions",
-      href: "/dashboard",
-      icon: DocumentTextIcon,
-      current: pathname === "/dashboard",
-    },
-    {
-      name: "New Session",
-      href: "/dashboard/sessions/new",
-      icon: PlusIcon,
-      current: pathname === "/dashboard/sessions/new",
-    },
-  ];
+  const router = useRouter();
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (!user) return;
+      try {
+        const data = await getSessions(user.id);
+        setSessions(data);
+        
+        // If there's a session ID in the URL, set it as active
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+        if (sessionId) {
+          setActiveSessionId(sessionId);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching sessions:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchSessions();
+  }, [user, pathname]); // Re-fetch when pathname changes (i.e., after new session creation)
+
+  const handleSessionSelect = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+    // Update URL without full navigation
+    window.history.pushState({}, "", `/dashboard?session=${sessionId}`);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -67,29 +89,12 @@ export default function DashboardLayout({
               <Image src="/logo.png" alt="Cortex Logo" width={32} height={32} />
               <h1 className="text-2xl font-bold text-white">Cortex</h1>
             </div>
-            <nav className="mt-5 flex-1 space-y-1 px-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                    item.current
-                      ? "bg-primary-400/10 text-primary-400"
-                      : "text-gray-400 hover:bg-dark-hover hover:text-white"
-                  }`}
-                >
-                  <item.icon
-                    className={`mr-3 h-6 w-6 flex-shrink-0 ${
-                      item.current
-                        ? "text-primary-400"
-                        : "text-gray-400 group-hover:text-white"
-                    }`}
-                    aria-hidden="true"
-                  />
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
+          {/* Sessions Sidebar */}
+          <SessionSidebar
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            onSessionSelect={handleSessionSelect}
+          />
           </div>
           <div className="flex flex-shrink-0 border-t border-dark-border p-4">
             <div className="group block w-full flex-shrink-0">

@@ -1,41 +1,88 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Session } from "@/types";
-import { getSessions } from "@/lib/supabase";
+import { Session, Message, StreamingMessage } from "@/types";
+import { getSession, getMessages } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { deleteResearchSession } from "@/app/actions/sessions";
+import { createMessageWithEmbedding } from "@/app/actions/embeddings";
+import { streamChatAction } from "@/app/actions/chat";
+import ChatInterface from "@/components/chat/ChatInterface";
+import SessionHeader from "@/components/dashboard/SessionHeader";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get("session");
+  
+  const [session, setSession] = useState<Session | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [streamingMessage, setStreamingMessage] = useState<StreamingMessage>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Track if initial prompt has been sent
+  const initialPromptSent = useRef(false);
+
+  // Separate effect for loading session data
   useEffect(() => {
-    const fetchSessions = async () => {
-      if (!user) return;
+    const fetchSessionData = async () => {
+      if (!user || !sessionId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const data = await getSessions(user.id);
-        setSessions(data);
+        const sessionData = await getSession(sessionId);
+        if (!sessionData) throw new Error("Session not found");
+        if (sessionData.user_id !== user.id) throw new Error("Unauthorized");
+
+        const existingMessages = await getMessages(sessionId);
+        setSession(sessionData);
+        setMessages(existingMessages);
+        setLoading(false);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load sessions"
-        );
-      } finally {
+        setError(err instanceof Error ? err.message : "Failed to load session data");
         setLoading(false);
       }
     };
 
-    fetchSessions();
-  }, [user]);
+    setLoading(true);
+    fetchSessionData();
+  }, [user, sessionId]);
 
-  const handleDelete = async (sessionId: string) => {
+  // Separate effect for handling initial prompt
+  useEffect(() => {
+    const handleInitialPrompt = async () => {
+      if (!session || !user || initialPromptSent.current || messages.length > 0 || loading) {
+        return;
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const prompt = urlParams.get('prompt');
+      if (!prompt) return;
+
+      try {
+        initialPromptSent.current = true;
+        // Remove prompt from URL
+        window.history.replaceState({}, "", `/dashboard?session=${sessionId}`);
+        // Send the initial prompt
+        const decodedPrompt = decodeURIComponent(prompt);
+        await handleSendMessage(decodedPrompt);
+      } catch (err) {
+        console.error("Error sending initial prompt:", err);
+        setError("Failed to start conversation. Please try refreshing the page.");
+      }
+    };
+
+    handleInitialPrompt();
+  }, [session, user, messages.length, sessionId]);
+
+  const handleDelete = async () => {
+    if (!session) return;
     if (
       !confirm(
         "Are you sure you want to delete this session? This will delete all related resources and cannot be undone."
@@ -44,15 +91,80 @@ export default function Dashboard() {
       return;
     }
 
-    setDeleteError(null);
     startTransition(async () => {
-      const result = await deleteResearchSession(sessionId);
+      const result = await deleteResearchSession(session.id);
       if (result.success) {
-        setSessions(sessions.filter((s) => s.id !== sessionId));
+        // Clear the session from URL and state
+        window.history.pushState({}, "", "/dashboard");
+        setSession(null);
+        setMessages([]);
       } else {
-        setDeleteError(result.error ?? "An unknown error occurred");
+        setError(result.error ?? "Failed to delete session");
       }
     });
+  };
+
+  const handleSendMessage = async (content: string) => {
+    if (!user || !session) {
+      setError("Session not available");
+      return;
+    }
+
+    try {
+      // Create and save user message
+      const userMessage = await createMessageWithEmbedding(
+        user.id,
+        session.id,
+        "user",
+        content
+      );
+
+      setMessages((prev) => [...prev, userMessage]);
+
+      // Start streaming the assistant's response
+      setStreamingMessage({
+        role: "assistant",
+        content: "",
+        isStreaming: true,
+      });
+
+      const formData = new FormData();
+      formData.append("message", content);
+
+      const response = await streamChatAction(null, formData, session.id);
+      if (!response.success) {
+        throw new Error(response.error || "Failed to get AI response");
+      }
+
+      let fullResponse = "";
+      for (const chunk of response.chunks) {
+        fullResponse += chunk;
+        setStreamingMessage({
+          role: "assistant",
+          content: fullResponse,
+          isStreaming: true,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+
+      const assistantMessage = await createMessageWithEmbedding(
+        user.id,
+        session.id,
+        "assistant",
+        fullResponse
+      );
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setStreamingMessage(undefined);
+    } catch (err) {
+      console.error("Error in chat:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to process message"
+      );
+      setStreamingMessage(undefined);
+    }
   };
 
   if (loading) {
@@ -80,122 +192,34 @@ export default function Dashboard() {
     );
   }
 
-  return (
-    <div className="py-6">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <h1 className="text-2xl font-semibold text-white">
-              Research Sessions
-            </h1>
-            <p className="mt-2 text-sm text-gray-400">
-              Your research sessions and knowledge pieces
-            </p>
-            {deleteError && (
-              <p className="mt-2 text-sm text-red-500">{deleteError}</p>
-            )}
-          </div>
-          <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-            <Link
-              href="/dashboard/sessions/new"
-              className="btn-primary flex items-center"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              New Session
-            </Link>
-          </div>
+  if (!session) {
+    return (
+      <div className="min-h-screen-without-nav flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-white">
+            Select a session from the sidebar
+          </h3>
+          <p className="mt-1 text-sm text-gray-400">
+            Or create a new session to get started
+          </p>
         </div>
+      </div>
+    );
+  }
 
-        {sessions.length === 0 ? (
-          <div className="mt-16 text-center">
-            <h3 className="text-lg font-medium text-white">
-              No research sessions yet
-            </h3>
-            <p className="mt-1 text-sm text-gray-400">
-              Get started by creating a new research session
-            </p>
-            <div className="mt-6">
-              <Link
-                href="/dashboard/sessions/new"
-                className="btn-primary inline-flex items-center"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                New Session
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-8 flex flex-col w-full">
-            <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-              <div className="inline-block w-full py-2 align-middle">
-                <div className="overflow-hidden shadow-card rounded-lg border border-dark-border">
-                  <table className="min-w-full divide-y divide-dark-border">
-                    <thead className="bg-dark-card">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-white sm:pl-6 lg:pl-8"
-                        >
-                          Title
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-3 py-3.5 text-left text-sm font-semibold text-white"
-                        >
-                          Description
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-3 py-3.5 text-left text-sm font-semibold text-white"
-                        >
-                          Created
-                        </th>
-                        <th
-                          scope="col"
-                          className="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8"
-                        >
-                          <span className="sr-only">Actions</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-dark-border bg-dark-bg">
-                      {sessions.map((session) => (
-                        <tr key={session.id}>
-                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-white sm:pl-6 lg:pl-8">
-                            {session.title}
-                          </td>
-                          <td className="px-3 py-4 text-sm text-gray-400 max-w-md truncate">
-                            {session.description}
-                          </td>
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400">
-                            {new Date(session.created_at).toLocaleDateString()}
-                          </td>
-                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
-                            <div className="flex items-center justify-end space-x-4">
-                              <Link
-                                href={`/dashboard/sessions/${session.id}`}
-                                className="text-primary-400 hover:text-primary-300 transition-colors duration-200"
-                              >
-                                View
-                              </Link>
-                              <button
-                                onClick={() => handleDelete(session.id)}
-                                disabled={isPending}
-                                className="text-red-500 hover:text-red-400 transition-colors duration-200 disabled:opacity-50"
-                              >
-                                <TrashIcon className="h-5 w-5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+  return (
+    <div className="flex flex-col h-[calc(100vh-theme(spacing.16))]">
+      <SessionHeader
+        session={session}
+        onDelete={handleDelete}
+        isDeleting={isPending}
+      />
+      <div className="flex-1 bg-dark-card shadow-card rounded-lg border border-dark-border">
+        <ChatInterface
+          messages={messages}
+          streamingMessage={streamingMessage}
+          onSendMessage={handleSendMessage}
+        />
       </div>
     </div>
   );

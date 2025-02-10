@@ -39,12 +39,9 @@ export default function NewSession() {
         throw new Error(result.error);
       }
 
-      // Encode the prompt to safely use it in the URL
+      // Redirect to dashboard with the new session selected and prompt
       const encodedPrompt = encodeURIComponent(result.prompt);
-      const newSessionUrl = `/dashboard/sessions/${result.session.id}?prompt=${encodedPrompt}`;
-
-      // Keep loading state active during navigation
-      router.push(newSessionUrl);
+      router.push(`/dashboard?session=${result.session.id}&prompt=${encodedPrompt}`);
       return; // Prevent setting isLoading to false since we're navigating away
     } catch (err) {
       const errorMessage =
