@@ -155,22 +155,34 @@ export default function SessionPage() {
 
   // Separate effect for handling the initial prompt
   useEffect(() => {
-    if (!session || !user || initialMessageSent.current) return;
+    const handleInitialPrompt = async () => {
+      if (!session || !user || initialMessageSent.current) return;
 
-    const prompt = searchParams.get("prompt");
-    if (!prompt) return;
+      const prompt = searchParams.get("prompt");
+      if (!prompt) return;
 
-    // Mark as sent immediately
-    initialMessageSent.current = true;
+      // Only send the initial prompt if there are no existing messages
+      if (messages.length > 0) {
+        // Just remove the prompt from URL if we already have messages
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+        return;
+      }
 
-    // Remove the prompt from the URL without refreshing the page
-    const newUrl = window.location.pathname;
-    window.history.replaceState({}, "", newUrl);
+      // Remove the prompt from the URL without refreshing the page
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
 
-    // Decode and send the prompt
-    const decodedPrompt = decodeURIComponent(prompt);
-    handleSendMessage(decodedPrompt);
-  }, [session, user, searchParams, handleSendMessage]);
+      // Mark as sent before actually sending to prevent double-sends
+      initialMessageSent.current = true;
+
+      // Decode and send the prompt
+      const decodedPrompt = decodeURIComponent(prompt);
+      await handleSendMessage(decodedPrompt);
+    };
+
+    handleInitialPrompt();
+  }, [session, user, messages, searchParams]); // Removed handleSendMessage from dependencies
 
   if (isLoading) {
     return (
