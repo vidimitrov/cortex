@@ -98,9 +98,6 @@ export default function SessionHeader({
             </button>
           </div>
         )}
-        {session.description && (
-          <p className="text-gray-400 mt-2">{session.description}</p>
-        )}
       </div>
       <button
         onClick={onDelete}

@@ -82,7 +82,6 @@ export default function ChatInterface({
         {/* Recent Sessions */}
         {recentSessions && recentSessions.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm text-gray-400 mb-2">Recent sessions</h3>
             <div className="flex flex-wrap gap-2">
               {recentSessions.map((session) => (
                 <button

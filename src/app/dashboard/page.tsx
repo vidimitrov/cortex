@@ -247,6 +247,9 @@ export default function Dashboard() {
         throw new Error(result.error);
       }
 
+      // Wait for a moment to ensure the session is created in the database
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Redirect to the new session
       router.push(
         `/dashboard?session=${result.session.id}&prompt=${encodeURIComponent(
@@ -262,10 +265,8 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen-without-nav flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center px-4">
-          <h1 className="text-2xl font-semibold text-white mb-8">
-            What can I help with?
-          </h1>
-          <div className="w-full max-w-3xl">
+          <div className="w-full max-w-3xl space-y-4">
+            <h1 className="text-2xl font-semibold text-white text-center">What can I help with?</h1>
             <ChatInterface
               messages={[]}
               onSendMessage={handleNewMessage}
