@@ -6,14 +6,15 @@ import { Session, Message, StreamingMessage } from "@/types";
 import { getSession, getMessages, getSessions } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useSearchParams, useRouter } from "next/navigation";
-import { deleteResearchSession, createSessionFromMessage } from "@/app/actions/sessions";
+import {
+  deleteResearchSession,
+  createSessionFromMessage,
+} from "@/app/actions/sessions";
 import { createMessageWithEmbedding } from "@/app/actions/embeddings";
 import { streamChatAction } from "@/app/actions/chat";
 import ChatInterface from "@/components/chat/ChatInterface";
 import SessionHeader from "@/components/dashboard/SessionHeader";
 import Modal from "@/components/ui/Modal";
-import { AnimatePresence } from "framer-motion";
-import AnimatedSessionCard from "@/components/dashboard/AnimatedSessionCard";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -65,9 +66,7 @@ export default function Dashboard() {
         setStreamingMessage(undefined);
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load data"
-        );
+        setError(err instanceof Error ? err.message : "Failed to load data");
         setSession(null);
         setMessages([]);
       } finally {
@@ -205,7 +204,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace('/auth/signin');
+      router.replace("/auth/signin");
     }
   }, [authLoading, user, router]);
 
@@ -248,7 +247,11 @@ export default function Dashboard() {
       }
 
       // Redirect to the new session
-      router.push(`/dashboard?session=${result.session.id}&prompt=${encodeURIComponent(content)}`);
+      router.push(
+        `/dashboard?session=${result.session.id}&prompt=${encodeURIComponent(
+          content
+        )}`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create session");
     }
