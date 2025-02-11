@@ -32,20 +32,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email,
-          firstName: session.user.user_metadata?.first_name,
-          lastName: session.user.user_metadata?.last_name,
-        });
+    const initializeAuth = async () => {
+      try {
+        // Check active sessions
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            firstName: session.user.user_metadata?.first_name,
+            lastName: session.user.user_metadata?.last_name,
+          });
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error checking auth session:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
 
-    // Listen for changes on auth state (sign in, sign out, etc.)
+    initializeAuth();
+
+    // Listen for changes on auth state
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -59,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -90,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           firstName: data.user.user_metadata?.first_name,
           lastName: data.user.user_metadata?.last_name,
         });
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
     },
     signUp: async (
@@ -116,13 +126,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           firstName,
           lastName,
         });
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
     },
     signOut: async () => {
       await supabase.auth.signOut();
       setUser(null);
-      router.push("/");
+      router.replace("/");
     },
   };
 

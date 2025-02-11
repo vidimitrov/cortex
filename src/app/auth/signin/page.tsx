@@ -22,7 +22,7 @@ export default function SignIn() {
 
     try {
       await signIn(email, password);
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err) {
       setError(
         err instanceof Error

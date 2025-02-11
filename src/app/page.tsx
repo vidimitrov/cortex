@@ -10,10 +10,12 @@ export default function Home() {
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/auth/signin");
-    } else if (!loading && user) {
-      router.push("/dashboard");
+    if (!loading) {
+      if (!user) {
+        router.replace("/auth/signin");
+      } else {
+        router.replace("/dashboard");
+      }
     }
   }, [user, loading, router]);
 

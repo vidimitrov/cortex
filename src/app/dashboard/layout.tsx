@@ -56,7 +56,7 @@ export default function DashboardLayout({
 
   const handleSessionSelect = (sessionId: string) => {
     setActiveSessionId(sessionId);
-    router.push(`/dashboard/sessions/${sessionId}`);
+    router.push(`/dashboard?session=${sessionId}`);
   };
 
   const handleSignOut = async () => {

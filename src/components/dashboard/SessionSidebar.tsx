@@ -17,17 +17,16 @@ export default function SessionSidebar({
 }: SessionSidebarProps) {
   return (
     <div className="flex flex-col h-full">
-      {/* New Session Button */}
-      <div className="p-4">
-        <Link
-          href="/dashboard/sessions/new"
-          className="btn-primary w-full flex items-center justify-center gap-2"
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="text-lg font-semibold">Cortex</span>
+        <Link 
+          href="/dashboard"
+          className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <PlusIcon className="h-5 w-5" />
-          New Session
+          <PlusIcon className="w-5 h-5" />
         </Link>
       </div>
-
       {/* Sessions List */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-2 space-y-1">

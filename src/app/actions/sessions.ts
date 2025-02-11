@@ -64,6 +64,31 @@ export async function createSession(userId: string, title: string, description: 
 
 import { CreateSessionResponse } from "@/types";
 
+export async function createSessionFromMessage(
+  userId: string,
+  message: string
+): Promise<CreateSessionResponse> {
+  try {
+    // Use the first 50 characters of the message as the title
+    const title = message.slice(0, 50) + (message.length > 50 ? "..." : "");
+    
+    // Create the session with the message as both title and description
+    const session = await createSession(userId, title, message);
+
+    return {
+      success: true,
+      session,
+      prompt: message,
+    };
+  } catch (error) {
+    console.error("Error creating session from message:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create session",
+    };
+  }
+}
+
 export async function createSessionWithPrompt(
   userId: string,
   title: string,
@@ -89,6 +114,37 @@ export async function createSessionWithPrompt(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create session",
+    };
+  }
+}
+
+export async function updateSessionTitle(sessionId: string, title: string) {
+  try {
+    const adminClient = createClient<Database>(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    const { data, error } = await adminClient
+      .from("sessions")
+      .update({ title })
+      .eq("id", sessionId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      session: data
+    };
+  } catch (error) {
+    console.error("Error updating session title:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update session title"
     };
   }
 }

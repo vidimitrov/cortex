@@ -6,20 +6,17 @@ import { Session, Message, StreamingMessage } from "@/types";
 import { getSession, getMessages, getSessions } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useSearchParams, useRouter } from "next/navigation";
-import { deleteResearchSession } from "@/app/actions/sessions";
+import { deleteResearchSession, createSessionFromMessage } from "@/app/actions/sessions";
 import { createMessageWithEmbedding } from "@/app/actions/embeddings";
 import { streamChatAction } from "@/app/actions/chat";
 import ChatInterface from "@/components/chat/ChatInterface";
 import SessionHeader from "@/components/dashboard/SessionHeader";
-import SessionListItem from "@/components/dashboard/SessionListItem";
-import Link from "next/link";
-import { PlusIcon } from "@heroicons/react/24/outline";
 import Modal from "@/components/ui/Modal";
 import { AnimatePresence } from "framer-motion";
 import AnimatedSessionCard from "@/components/dashboard/AnimatedSessionCard";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session");
@@ -35,56 +32,50 @@ export default function Dashboard() {
   // Track if initial prompt has been sent
   const initialPromptSent = useRef(false);
 
-  // Load all sessions
+  // Combined effect for loading data
   useEffect(() => {
-    const fetchAllSessions = async () => {
-      if (!user) return;
-      try {
-        const data = await getSessions(user.id);
-        setSessions(data);
-      } catch (err) {
-        console.error("Error fetching all sessions:", err);
-      }
-    };
-    fetchAllSessions();
-  }, [user]);
-
-  // Separate effect for loading session data
-  useEffect(() => {
-    const fetchSessionData = async () => {
-      if (!user || !sessionId) {
+    const fetchData = async () => {
+      if (!user) {
         setLoading(false);
-        setSession(null);
-        setMessages([]);
-        setStreamingMessage(undefined);
-        setError(null);
         return;
       }
 
       try {
         setLoading(true);
         setError(null);
-        setMessages([]);
+
+        // Always fetch sessions
+        const sessionsData = await getSessions(user.id);
+        setSessions(sessionsData);
+
+        // If there's a session ID, fetch that session's data
+        if (sessionId) {
+          const sessionData = await getSession(sessionId);
+          if (!sessionData) throw new Error("Session not found");
+          if (sessionData.user_id !== user.id) throw new Error("Unauthorized");
+
+          const existingMessages = await getMessages(sessionId);
+          setSession(sessionData);
+          setMessages(existingMessages);
+        } else {
+          setSession(null);
+          setMessages([]);
+        }
+
         setStreamingMessage(undefined);
-
-        const sessionData = await getSession(sessionId);
-        if (!sessionData) throw new Error("Session not found");
-        if (sessionData.user_id !== user.id) throw new Error("Unauthorized");
-
-        const existingMessages = await getMessages(sessionId);
-        setSession(sessionData);
-        setMessages(existingMessages);
       } catch (err) {
+        console.error("Error fetching data:", err);
         setError(
-          err instanceof Error ? err.message : "Failed to load session data"
+          err instanceof Error ? err.message : "Failed to load data"
         );
         setSession(null);
+        setMessages([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSessionData();
+    fetchData();
     // Reset initialPromptSent when session changes
     initialPromptSent.current = false;
   }, [user, sessionId]);
@@ -212,7 +203,13 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/auth/signin');
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen-without-nav flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -237,47 +234,39 @@ export default function Dashboard() {
     );
   }
 
+  const handleNewMessage = async (content: string) => {
+    if (!user) {
+      setError("Please sign in to continue");
+      return;
+    }
+
+    try {
+      // Create a new session from the message
+      const result = await createSessionFromMessage(user.id, content);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // Redirect to the new session
+      router.push(`/dashboard?session=${result.session.id}&prompt=${encodeURIComponent(content)}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create session");
+    }
+  };
+
   if (!session) {
     return (
-      <div className="min-h-screen-without-nav flex flex-col justify-center gap-8 px-4">
-        {/* Recent Sessions */}
-        {sessions.length > 0 && (
-          <div className="w-full max-w-3xl mx-auto">
-            <h3 className="text-lg font-medium text-white mb-4">
-              Recent Sessions
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <AnimatePresence mode="popLayout">
-                {sessions
-                  .sort(
-                    (a, b) =>
-                      new Date(b.created_at).getTime() -
-                      new Date(a.created_at).getTime()
-                  )
-                  .slice(0, 3)
-                  .map((recentSession) => (
-                    <AnimatedSessionCard
-                      key={recentSession.id}
-                      session={recentSession}
-                      onClick={async () =>
-                        router.push(`/dashboard?session=${recentSession.id}`)
-                      }
-                    />
-                  ))}
-              </AnimatePresence>
-            </div>
+      <div className="min-h-screen-without-nav flex flex-col">
+        <div className="flex-1 flex flex-col items-center justify-center px-4">
+          <h1 className="text-2xl font-semibold text-white mb-8">
+            What can I help with?
+          </h1>
+          <div className="w-full max-w-3xl">
+            <ChatInterface
+              messages={[]}
+              onSendMessage={handleNewMessage}
+            />
           </div>
-        )}
-
-        {/* New Session CTA */}
-        <div className="w-full max-w-3xl mx-auto">
-          <Link
-            href="/dashboard/sessions/new"
-            className="btn-primary w-full flex items-center justify-center gap-2 py-3"
-          >
-            <PlusIcon className="h-5 w-5" />
-            New Session
-          </Link>
         </div>
       </div>
     );
