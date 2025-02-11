@@ -59,10 +59,10 @@ export default function Dashboard() {
       // Wait for a moment to ensure the session is created in the database
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Redirect to the new session with the prompt
+      // Redirect to the new session with the generated research prompt
       router.push(
         `/dashboard/sessions/${result.session.id}?prompt=${encodeURIComponent(
-          content
+          result.prompt
         )}`
       );
     } catch (err) {

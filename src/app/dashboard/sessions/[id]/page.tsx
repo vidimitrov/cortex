@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Session, Message, StreamingMessage } from "@/types";
 import { getSession, getMessages } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { deleteResearchSession } from "@/app/actions/sessions";
 import { createMessageWithEmbedding } from "@/app/actions/embeddings";
 import { streamChatAction } from "@/app/actions/chat";
@@ -28,6 +28,81 @@ export default function SessionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const initialPromptSentRef = useRef(false);
+  const searchParams = useSearchParams();
+
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      if (!user || !session) {
+        setError("Session not available");
+        return;
+      }
+
+      try {
+        // Create and save user message
+        const userMessage = await createMessageWithEmbedding(
+          user.id,
+          session.id,
+          "user",
+          content
+        );
+
+        setMessages((prev) => [...prev, userMessage]);
+
+        // Start streaming the assistant's response
+        setStreamingMessage({
+          role: "assistant",
+          content: "",
+          isStreaming: true,
+        });
+
+        const formData = new FormData();
+        formData.append("message", content);
+
+        // Set knowledge piece updating state
+        setIsUpdatingKnowledge(true);
+
+        const response = await streamChatAction(null, formData, session.id);
+        if (!response.success) {
+          throw new Error(response.error || "Failed to get AI response");
+        }
+
+        let fullResponse = "";
+        for (const chunk of response.chunks) {
+          fullResponse += chunk;
+          setStreamingMessage({
+            role: "assistant",
+            content: fullResponse,
+            isStreaming: true,
+          });
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+
+        const assistantMessage = await createMessageWithEmbedding(
+          user.id,
+          session.id,
+          "assistant",
+          fullResponse
+        );
+
+        setMessages((prev) => [...prev, assistantMessage]);
+        setStreamingMessage(undefined);
+
+        // Fetch updated knowledge piece
+        const updatedKnowledgePiece = await getKnowledgePiece(session.id);
+        setKnowledgePiece(updatedKnowledgePiece);
+        setIsUpdatingKnowledge(false);
+      } catch (err) {
+        console.error("Error in chat:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to process message"
+        );
+        setStreamingMessage(undefined);
+        setIsUpdatingKnowledge(false);
+      }
+    },
+    [user, session]
+  );
 
   // Load session data and knowledge piece
   useEffect(() => {
@@ -75,6 +150,17 @@ export default function SessionPage() {
     fetchData();
   }, [user, sessionId]);
 
+  // Handle initial prompt from URL
+  useEffect(() => {
+    if (session && !initialPromptSentRef.current) {
+      const prompt = searchParams.get("prompt");
+      if (prompt) {
+        handleSendMessage(prompt);
+        initialPromptSentRef.current = true;
+      }
+    }
+  }, [session, searchParams, handleSendMessage]);
+
   const handleDelete = async () => {
     if (!session) return;
     if (
@@ -93,76 +179,6 @@ export default function SessionPage() {
         setError(result.error ?? "Failed to delete session");
       }
     });
-  };
-
-  const handleSendMessage = async (content: string) => {
-    if (!user || !session) {
-      setError("Session not available");
-      return;
-    }
-
-    try {
-      // Create and save user message
-      const userMessage = await createMessageWithEmbedding(
-        user.id,
-        session.id,
-        "user",
-        content
-      );
-
-      setMessages((prev) => [...prev, userMessage]);
-
-      // Start streaming the assistant's response
-      setStreamingMessage({
-        role: "assistant",
-        content: "",
-        isStreaming: true,
-      });
-
-      const formData = new FormData();
-      formData.append("message", content);
-
-      // Set knowledge piece updating state
-      setIsUpdatingKnowledge(true);
-
-      const response = await streamChatAction(null, formData, session.id);
-      if (!response.success) {
-        throw new Error(response.error || "Failed to get AI response");
-      }
-
-      let fullResponse = "";
-      for (const chunk of response.chunks) {
-        fullResponse += chunk;
-        setStreamingMessage({
-          role: "assistant",
-          content: fullResponse,
-          isStreaming: true,
-        });
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-
-      const assistantMessage = await createMessageWithEmbedding(
-        user.id,
-        session.id,
-        "assistant",
-        fullResponse
-      );
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setStreamingMessage(undefined);
-
-      // Fetch updated knowledge piece
-      const updatedKnowledgePiece = await getKnowledgePiece(session.id);
-      setKnowledgePiece(updatedKnowledgePiece);
-      setIsUpdatingKnowledge(false);
-    } catch (err) {
-      console.error("Error in chat:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to process message"
-      );
-      setStreamingMessage(undefined);
-      setIsUpdatingKnowledge(false);
-    }
   };
 
   if (loading) {
