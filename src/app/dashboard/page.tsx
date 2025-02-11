@@ -116,12 +116,13 @@ export default function Dashboard() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const handleDelete = async () => {
-    if (!session) return;
+  const handleDelete = () => {
+    if (!session) return Promise.resolve();
     setShowDeleteModal(true);
+    return Promise.resolve();
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = () => {
     if (!session) return;
     startTransition(async () => {
       setShowDeleteModal(false);
@@ -281,7 +282,7 @@ export default function Dashboard() {
     <div className="flex flex-col h-[calc(100vh-theme(spacing.16))]">
       <Modal
         isOpen={showDeleteModal}
-        onClose={async () => setShowDeleteModal(false)}
+        onClose={() => setShowDeleteModal(false)}
         title="Delete Session"
         description="Are you sure you want to delete this session? This will delete all related resources and cannot be undone."
         confirmLabel="Delete"

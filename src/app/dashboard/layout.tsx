@@ -83,11 +83,7 @@ export default function DashboardLayout({
         }`}
       >
         <div className="flex min-h-0 flex-1 flex-col bg-dark-card border-r border-dark-border">
-          <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
-            <div className="flex flex-shrink-0 items-center px-4 gap-2">
-              <Image src="/logo.png" alt="Cortex Logo" width={32} height={32} />
-              <h1 className="text-2xl font-bold text-white">Cortex</h1>
-            </div>
+          <div className="flex flex-1 flex-col overflow-y-auto">
             {/* Sessions Sidebar */}
             <SessionSidebar
               sessions={sessions}
