@@ -265,6 +265,8 @@ export default function Dashboard() {
             <ChatInterface
               messages={[]}
               onSendMessage={handleNewMessage}
+              recentSessions={sessions.slice(0, 5)}
+              onSessionSelect={(id) => router.push(`/dashboard?session=${id}`)}
             />
           </div>
         </div>
