@@ -30,8 +30,6 @@ export default function DashboardLayout({
   const [activeSessionId, setActiveSessionId] = useState<string>();
   const [loading, setLoading] = useState(true);
 
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     const fetchSessions = async () => {
       if (!user) return;
@@ -40,9 +38,10 @@ export default function DashboardLayout({
         const data = await getSessions(user.id);
         setSessions(data);
 
-        // If there's a session ID in the URL, set it as active
-        const sessionId = searchParams.get("session");
-        setActiveSessionId(sessionId || undefined);
+        // If we're on a session page, set it as active
+        const match = pathname.match(/\/dashboard\/sessions\/([^/]+)$/);
+        const sessionId = match ? match[1] : undefined;
+        setActiveSessionId(sessionId);
 
         setLoading(false);
       } catch (err) {
@@ -52,11 +51,11 @@ export default function DashboardLayout({
     };
 
     fetchSessions();
-  }, [user, searchParams]); // Re-fetch when URL params change (including session deletion)
+  }, [user, pathname]); // Re-fetch when pathname changes (including session changes)
 
   const handleSessionSelect = (sessionId: string) => {
     setActiveSessionId(sessionId);
-    router.push(`/dashboard?session=${sessionId}`);
+    router.push(`/dashboard/sessions/${sessionId}`);
   };
 
   const handleSignOut = async () => {
