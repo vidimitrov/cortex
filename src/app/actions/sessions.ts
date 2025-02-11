@@ -14,27 +14,55 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error("Missing OPENAI_API_KEY environment variable");
 }
 
-const model = new ChatOpenAI({
+// More deterministic for title generation
+const titleModel = new ChatOpenAI({
+  modelName: "gpt-4",
+  temperature: 0.3,
+});
+
+// More creative for research prompt generation
+const promptModel = new ChatOpenAI({
   modelName: "gpt-4",
   temperature: 0.7,
 });
 
-const promptTemplate = ChatPromptTemplate.fromMessages([
-  ["system", `Given a research topic with the following title and description, create a clear, focused question that will help initiate productive research on this topic. The question should be specific enough to guide the research but open-ended enough to encourage exploration.
+const titleTemplate = ChatPromptTemplate.fromMessages([
+  ["system", `Given a user's research question or topic, generate a concise and descriptive title that captures the main focus. The title should be clear, professional, and no longer than 50 characters.
 
-Title: {title}
-Description: {description}
+User message: {message}
 
-Generate a research-oriented question that will help explore this topic effectively.`],
+Generate a concise title.`],
 ]);
 
-const promptChain = RunnableSequence.from([
+const titleChain = RunnableSequence.from([
   {
-    title: (input: { title: string; description: string }) => input.title,
-    description: (input: { title: string; description: string }) => input.description,
+    message: (input: { message: string }) => input.message,
   },
-  promptTemplate,
-  model,
+  titleTemplate,
+  titleModel,
+  new StringOutputParser(),
+]);
+
+const researchPromptTemplate = ChatPromptTemplate.fromMessages([
+  ["system", `Given a research topic and the user's original question, create a detailed and focused prompt that will help initiate productive research. The prompt should:
+- Build upon the user's original question
+- Add relevant context and considerations
+- Frame the question in a way that encourages deep exploration
+- Maintain academic rigor while being clear and approachable
+
+Title: {title}
+Original Question: {message}
+
+Generate a comprehensive research prompt that will guide this investigation effectively.`],
+]);
+
+const researchPromptChain = RunnableSequence.from([
+  {
+    title: (input: { title: string; message: string }) => input.title,
+    message: (input: { title: string; message: string }) => input.message,
+  },
+  researchPromptTemplate,
+  promptModel,
   new StringOutputParser(),
 ]);
 
@@ -69,16 +97,24 @@ export async function createSessionFromMessage(
   message: string
 ): Promise<CreateSessionResponse> {
   try {
-    // Use the first 50 characters of the message as the title
-    const title = message.slice(0, 50) + (message.length > 50 ? "..." : "");
+    // Generate a concise title from the message
+    const title = await titleChain.invoke({
+      message,
+    });
     
-    // Create the session with the message as both title and description
+    // Create the session with the generated title
     const session = await createSession(userId, title, message);
+
+    // Generate a comprehensive research prompt using both title and message
+    const prompt = await researchPromptChain.invoke({
+      title,
+      message,
+    });
 
     return {
       success: true,
       session,
-      prompt: message,
+      prompt,
     };
   } catch (error) {
     console.error("Error creating session from message:", error);
@@ -95,10 +131,10 @@ export async function createSessionWithPrompt(
   description: string
 ): Promise<CreateSessionResponse> {
   try {
-    // Generate the research prompt
-    const prompt = await promptChain.invoke({
+    // Generate a comprehensive research prompt
+    const prompt = await researchPromptChain.invoke({
       title,
-      description,
+      message: description,
     });
 
     // Create the session
